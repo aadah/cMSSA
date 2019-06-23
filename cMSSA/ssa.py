@@ -85,18 +85,15 @@ class CMSSA(object):
 
     def _reconstruct(self, pair):
         A, X = pair
-        n, d = X.shape
-        w = self.window
-        nc = self.E.shape[1]
-        R = np.empty((nc, n, d))
-        for i in range(n):
-            lower = max([0, i - n + w])
-            upper = min([w, i + 1])
-            normalizer = upper - lower
-            for j in range(d):
-                for k in range(nc):
-                    R[k, i, j] = sum([A[i-t, k]*self.E[j*w+t, k] for t in range(lower, upper)])
-            R[:, i, :] /= normalizer
+        D = X.shape[1]
+        K = self.E.shape[1]
+        Rs = []
+        for k in range(K):
+            Hk = np.outer(A[:, k], self.E[:, k])
+            Hks = np.split(Hk, D, axis=1)
+            xs = np.array([self._average_anti_diagonal(hk) for hk in Hks])
+            Rs.append(np.array(xs).T)
+        R = np.stack(Rs, axis=0)
         if self._flatten:
             R = R.transpose(1, 0, 2).reshape((R.shape[1], -1))
         elif self._collapse:
@@ -106,6 +103,14 @@ class CMSSA(object):
                     R *= self.std
                 R += self.mean
         return R
+
+    @staticmethod
+    def _average_anti_diagonal(X):
+        a, b = X.shape
+        num = a+b-1
+        X = np.flipud(X)
+        x = [np.mean(np.diag(X, i)) for i in range(-a+1, b)]
+        return x
 
     def fit(self, X_fg, X_bg):
         self.mean, self.std = self.stats(X_fg)
