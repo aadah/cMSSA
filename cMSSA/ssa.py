@@ -174,9 +174,9 @@ class CMSSA(object):
         return self.compute_best_alphas()[0][0]
 
     def compute_eigen(self, alpha):
-        C = np.copy(self.C_fg)
+        C = self.C_fg
         if alpha > 0:
-            C -= alpha * self.C_bg
+            C = self.C_fg - alpha * self.C_bg
         self.eig_vals, self.eig_vecs = linalg.eig(C)
         idxs = np.argsort(-self.eig_vals)
         E = self.eig_vecs[:, idxs[:self.num_comp]]
