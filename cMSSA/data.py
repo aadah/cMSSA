@@ -18,7 +18,7 @@ from collections import defaultdict
 #
 # Returns a dict mapping an activity to all time series of that activity.
 # Each key is simply a human-readable string.
-def load_mhealth_data(root_path, partition=None):
+def load_mhealth_data(root_path, partition=None, sample_rate=None):
     tasks = [
         'null',
         'standing',
@@ -52,7 +52,8 @@ def load_mhealth_data(root_path, partition=None):
             assert len(set(arr[:, -1])) == 1
             task = tasks[int(arr[0, -1])]
             X = arr[:, :-1]
-
+            if sample_rate is not None:
+                X = X[::sample_rate, :]
             if partition is not None:
                 Xs = np.array_split(X, partition, axis=0)
                 data[task].extend(Xs)
@@ -121,7 +122,7 @@ def load_earthquake_data(root_path, dataset='train'):
 #
 # Returns a dict mapping an activity to all time series of that activity.
 # Each key is of the form '[normal|aggressive]/ACTIVITY'.
-def load_emg_data(path, partition=None):
+def load_emg_data(path, partition=None, sample_rate=None):
     data = defaultdict(list)
 
     def split(p):
@@ -157,6 +158,8 @@ def load_emg_data(path, partition=None):
         kind = parts[-3].lower()
         with rf.open(f.filename) as ff:
             X = read_timeseries(ff)
+        if sample_rate is not None:
+            X = X[::sample_rate, :]
         key = '{}/{}'.format(kind, activity)
         if partition is not None:
             Xs = np.array_split(X, partition, axis=0)
