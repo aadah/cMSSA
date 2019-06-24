@@ -7,7 +7,8 @@ from sklearn.cluster import SpectralClustering
 
 
 class CMSSA(object):
-    def __init__(self, window=1, alpha=0.0, num_comp=2, standardize=False):
+    def __init__(self, window=1, alpha=0.0, num_comp=2, standardize=False,
+                 verbose=False):
         self.window = window
         self.alpha = alpha
         self.num_comp = num_comp
@@ -16,6 +17,8 @@ class CMSSA(object):
         self._collapse = None
         self._flatten = None
         self._denormalize = None
+
+        self._verbose = verbose
 
     def trajectory_matrix(self, X):
         # a window of 1 just recreates X,
@@ -128,11 +131,21 @@ class CMSSA(object):
                             max_log_alpha=3,
                             matrix_norm='nuc'):
 
+        if self._verbose:
+            print("Generating candidate alphas...")
+
         # generate candidates
         candidates = np.logspace(min_log_alpha, max_log_alpha, candidate_size)
         candidates = np.concatenate(([0], candidates))  # add zero as candidate
+
+        if self._verbose:
+            print("Computing each alpha's eigen matrix...")
+
         with Pool() as p:
             Es = p.map(self.compute_eigen, candidates)
+
+        if self._verbose:
+            print("Computing alpha affinity matix...")
 
         # create similarity matrix
         cs = len(candidates)
@@ -147,7 +160,14 @@ class CMSSA(object):
         algo = SpectralClustering(n_clusters=return_size,
                                   affinity='precomputed',
                                   n_jobs=-1)
+
+        if self._verbose:
+            print("Clustering alphas...", end='')
+
         algo.fit(S)
+
+        if self._verbose:
+            print("DONE")
 
         # extract mediod alphas and their sum affinties
         best = []
