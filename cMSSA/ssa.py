@@ -198,7 +198,7 @@ class CMSSA(object):
         if alpha > 0:
             C = self.C_fg - alpha * self.C_bg
         self.eig_vals, self.eig_vecs = linalg.eig(C)
-        idxs = np.argsort(-abs(self.eig_vals))
+        idxs = np.argsort(-self.eig_vals)
         E = self.eig_vecs[:, idxs[:self.num_comp]]
         e = self.eig_vals[idxs[:self.num_comp]]
         return E, e
